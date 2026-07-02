@@ -1,6 +1,6 @@
 # vwb-custom-app
 
-POC proving that FAIRplex functionality — Synapse DRS resolution ("DERS") and
+POC proving that FAIRplex functionality — Synapse DRS resolution and
 AMP dataset search — can run as a **Verily Workbench custom app**: a
 self-contained docker-compose stack launched per user inside Workbench, where
 platform-level login replaces all FAIRplex auth machinery.
