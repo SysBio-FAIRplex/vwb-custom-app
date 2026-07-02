@@ -13,12 +13,12 @@ runtime on the app's **Create Session** screen and held in server memory only.
 
 ```
 Workbench iframe (dynamic path prefix)
-        │  port 8080
-┌───────▼────────────┐   app-network (external) + internal
+        │  published host port 8080
+┌───────▼────────────┐   reached via its published port
 │ app                │   Express (TS) API + React/Vite SPA
 │ application-server │   session · /api/drs/resolve · /api/search · /api/tables
 └───────┬────────────┘
-        │  internal network only
+        │  internal bridge network only
 ┌───────▼────────────┐        ┌──────────────────┐
 │ query-node         │───────▶│ db (postgres:16) │
 │ FastAPI, sync      │        │ synthetic AMP    │
@@ -63,12 +63,12 @@ iframe. Everything therefore uses relative URLs:
 ## Local testing
 
 ```bash
-docker network create app-network        # Workbench provides this; locally it must pre-exist
-docker compose -f docker-compose.local.yaml up --build
+docker compose up --build                 # publishes the app on host port 8080
+# or, if 8080 is already taken on your host:
+APP_PORT=8081 docker compose up --build
 ```
 
-Then open <http://localhost:8081> (the local compose maps host 8081 → container
-8080):
+Then open <http://localhost:8080> (or the `APP_PORT` you set):
 
 1. Search and DRS screens are gated until you create a session.
 2. **Session** → paste a real Synapse PAT (Synapse → Account Settings →
@@ -82,16 +82,26 @@ Then open <http://localhost:8081> (the local compose maps host 8081 → containe
    resolve; use a real `syn…` ID for a live check.
 5. Clearing the session re-gates the screens.
 
-`docker-compose.yaml` (with `${templateOption:*}` placeholders) is for
-Workbench; plain `docker compose` cannot parse the placeholders, hence the
-`docker-compose.local.yaml` twin with defaults baked in.
+A single `docker-compose.yaml` serves both Workbench and local use. Its two
+knobs use standard compose interpolation with baked-in defaults, so the file
+always parses and runs whether or not anything substitutes values:
+
+- `SYNAPSE_DRS_BASE_URL` (default: Synapse prod GA4GH DRS base)
+- `AMP_PROGRAMS` (default: `AMP-PD,AMP-AD,AMP-RASLE`)
+- `APP_PORT` (default: `8080`)
+
+Override any of them by setting the env var before `docker compose up`, or in
+Workbench's app environment. (Do **not** use `${templateOption:*}` compose
+syntax — plain `docker compose` fails to parse it, which stops the whole stack
+before any container starts.)
 
 ### Path-prefix proxy test
 
 Simulates Workbench's iframe proxy — this catches any absolute-URL regression:
 
 ```bash
-docker run -d --name vwb-prefix-test --network app-network -p 9100:9100 \
+# join the compose-created internal network so the proxy can reach the app by name
+docker run -d --name vwb-prefix-test --network vwb-custom-app_internal -p 9100:9100 \
   -v $PWD/nginx-prefix-test.conf:/etc/nginx/conf.d/default.conf:ro nginx:alpine
 ```
 
@@ -115,9 +125,11 @@ request to `/api/*` at the host root is a leading-slash bug.
 1. Push this repo somewhere Workbench can clone. The root already has the
    three required files: `.devcontainer.json`, `docker-compose.yaml`,
    `devcontainer-template.json`.
-2. Register it as a custom app; Workbench substitutes the template options:
-   - `synapse_drs_base_url` (default: Synapse prod GA4GH DRS base)
-   - `amp_programs` (default: `AMP-PD,AMP-AD,AMP-RASLE`)
+2. Register it as a custom app. It boots on the baked-in defaults with no
+   configuration; to change a knob, set its env var (`SYNAPSE_DRS_BASE_URL`,
+   `AMP_PROGRAMS`) in the app environment. The compose file publishes the app
+   on port 8080 for Workbench's proxy and keeps query-node/db on an internal
+   bridge network — no external network is required.
 3. Launch per user, then repeat the session → DRS → search flow inside the
    iframe. Watch for asset 404s (an absolute URL slipped in) and confirm
    query-node is only reachable from the app container via service DNS.
@@ -127,8 +139,7 @@ request to `/api/*` at the host root is a leading-slash bug.
 ```
 .devcontainer.json           # Workbench/devcontainer entry: compose file + "app" service
 devcontainer-template.json   # template options surfaced at app-creation time
-docker-compose.yaml          # Workbench compose (templateOption placeholders)
-docker-compose.local.yaml    # same stack, defaults baked in, host port 8081
+docker-compose.yaml          # one compose file (Workbench + local), ${VAR:-default} knobs
 app/                         # Express (TS) API + React/Vite SPA, one image
   server/                    # session, ported DRS resolver, whitelisted search builder
   src/                       # HashRouter SPA: CreateSession, Search, DrsLookup

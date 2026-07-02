@@ -1,22 +1,28 @@
-# Verily Workbench custom-app compose file.
-# ${templateOption:*} placeholders are substituted by Workbench at app-creation
-# time. For local testing (where no substitution happens and docker compose
-# would choke on the placeholder syntax) use docker-compose.local.yaml instead.
+# Single compose file for both Workbench and local use.
+#
+# Configuration comes from standard docker-compose interpolation with baked-in
+# defaults (${VAR:-default}), so the file ALWAYS parses and runs — with or
+# without any external substitution step. Override a knob by setting the env
+# var before `docker compose up` (or in Workbench's app environment):
+#   SYNAPSE_DRS_BASE_URL   Synapse GA4GH DRS base URL
+#   AMP_PROGRAMS           comma-separated synthetic programs to seed
+#   APP_PORT               host port to publish the app on (default 8080)
 services:
   app:
     container_name: application-server
     build: ./app
+    # Workbench proxies the app via this published port (default 8080).
+    # Locally, set APP_PORT=8081 etc. if 8080 is already taken on your host.
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     environment:
       QUERY_NODE_URL: http://query-node:8080
-      SYNAPSE_DRS_BASE_URL: ${templateOption:synapse_drs_base_url}
+      SYNAPSE_DRS_BASE_URL: ${SYNAPSE_DRS_BASE_URL:-https://repo-prod.prod.sagebase.org/ga4gh/drs/v1}
     volumes:
       - .:/workspace:cached
     depends_on:
       - query-node
     networks:
-      - app-network
       - internal
 
   query-node:
@@ -27,7 +33,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       POSTGRES_DB: amp_data
-      AMP_PROGRAMS: ${templateOption:amp_programs}
+      AMP_PROGRAMS: ${AMP_PROGRAMS:-AMP-PD,AMP-AD,AMP-RASLE}
     depends_on:
       db:
         condition: service_healthy
@@ -56,9 +62,9 @@ volumes:
   pgdata:
 
 networks:
-  # Workbench provides this network; create it locally with:
-  #   docker network create app-network
-  app-network:
-    external: true
+  # Self-contained bridge — no external network dependency. Only the app's
+  # published host port crosses out of this network; query-node and db stay
+  # internal. (If Workbench ever requires the app to join a proxy-provided
+  # network by name, add that network here and attach the app service to it.)
   internal:
     driver: bridge
