@@ -1,0 +1,64 @@
+# Verily Workbench custom-app compose file.
+# ${templateOption:*} placeholders are substituted by Workbench at app-creation
+# time. For local testing (where no substitution happens and docker compose
+# would choke on the placeholder syntax) use docker-compose.local.yaml instead.
+services:
+  app:
+    container_name: application-server
+    build: ./app
+    ports:
+      - "8080:8080"
+    environment:
+      QUERY_NODE_URL: http://query-node:8080
+      SYNAPSE_DRS_BASE_URL: ${templateOption:synapse_drs_base_url}
+    volumes:
+      - .:/workspace:cached
+    depends_on:
+      - query-node
+    networks:
+      - app-network
+      - internal
+
+  query-node:
+    build: ./query-node
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: amp_data
+      AMP_PROGRAMS: ${templateOption:amp_programs}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      # POC-internal dev credentials for the bundled, non-exposed database —
+      # not real secrets. The db is only reachable on the internal network.
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: amp_data
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d amp_data"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  # Workbench provides this network; create it locally with:
+  #   docker network create app-network
+  app-network:
+    external: true
+  internal:
+    driver: bridge

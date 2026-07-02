@@ -1,0 +1,18 @@
+{
+  "id": "fairplex-vwb-custom-app",
+  "version": "0.1.0",
+  "name": "FAIRplex Custom App",
+  "description": "FAIRplex POC for Verily Workbench: Synapse DRS resolution plus AMP dataset search over a bundled query-node with synthetic data. Workbench platform login replaces FAIRplex auth; the app collects a Synapse personal access token at runtime on its Create Session screen.",
+  "options": {
+    "synapse_drs_base_url": {
+      "type": "string",
+      "default": "https://repo-prod.prod.sagebase.org/ga4gh/drs/v1",
+      "description": "Base URL of the Synapse GA4GH DRS API used for DRS resolution."
+    },
+    "amp_programs": {
+      "type": "string",
+      "default": "AMP-PD,AMP-AD,AMP-RASLE",
+      "description": "Comma-separated AMP programs whose synthetic data is seeded into the bundled query-node database."
+    }
+  }
+}
