@@ -12,10 +12,10 @@ export const drsRouter = Router();
 drsRouter.post("/resolve", async (req, res) => {
   try {
     const session = getSession();
-    if (!session) {
+    if (!session || !session.synapseToken) {
       res.status(401).json({
         success: false,
-        error: "No active session. Create a session with your Synapse token first.",
+        error: "DRS resolution needs a Synapse token. Add one to your session first.",
       });
       return;
     }

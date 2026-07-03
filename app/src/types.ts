@@ -4,9 +4,23 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
+export type EmailSource = "workbench" | "user";
+
 export interface SessionStatus {
   active: boolean;
+  name?: string;
+  email?: string;
+  emailSource?: EmailSource;
+  hasToken?: boolean;
   createdAt?: string;
+}
+
+export interface WorkbenchIdentity {
+  status: "pending" | "resolved" | "unavailable";
+  email?: string;
+  project?: string;
+  workspace?: string;
+  petSa?: string;
 }
 
 export interface FederationEnvelope {

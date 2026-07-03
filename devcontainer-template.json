@@ -2,7 +2,7 @@
   "id": "fairplex-vwb-custom-app",
   "version": "0.1.0",
   "name": "FAIRplex Custom App",
-  "description": "FAIRplex POC for Verily Workbench: Synapse DRS resolution plus AMP dataset search over a bundled query-node with synthetic data. Workbench platform login replaces FAIRplex auth; the app collects a Synapse personal access token at runtime on its Create Session screen.",
+  "description": "FAIRplex POC for Verily Workbench: Synapse DRS resolution plus AMP dataset search over a bundled query-node with synthetic data. Workbench platform login replaces FAIRplex auth; the Start session screen prefills the user's Workbench identity via the wb CLI and optionally collects a Synapse personal access token at runtime.",
   "options": {
     "synapse_drs_base_url": {
       "type": "string",

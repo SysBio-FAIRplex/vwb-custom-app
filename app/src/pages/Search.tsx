@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
+import { useSession } from "../App";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { ApiResponse, FederationEnvelope } from "../types";
 
@@ -64,6 +65,7 @@ function formatCell(value: unknown): string {
 }
 
 export function Search() {
+  const { session } = useSession();
   const [tab, setTab] = useState("datasets");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [publicPreview, setPublicPreview] = useState(false);
@@ -175,20 +177,27 @@ export function Search() {
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <label className="flex items-center space-x-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={publicPreview}
-              onChange={(e) => setPublicPreview(e.target.checked)}
-              className="rounded border-slate-300"
-            />
-            <span>
-              Preview as public{" "}
-              <span className="text-xs text-slate-400">
-                (drops auth — query-node redacts sex/race)
+          {session.hasToken ? (
+            <label className="flex items-center space-x-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={publicPreview}
+                onChange={(e) => setPublicPreview(e.target.checked)}
+                className="rounded border-slate-300"
+              />
+              <span>
+                Preview as public{" "}
+                <span className="text-xs text-slate-400">
+                  (drops auth — query-node redacts sex/race)
+                </span>
               </span>
+            </label>
+          ) : (
+            <span className="text-xs text-slate-400">
+              Public results — sex/race redacted. Add a Synapse token above for
+              authorized access.
             </span>
-          </label>
+          )}
           <button
             type="submit"
             disabled={isLoading}

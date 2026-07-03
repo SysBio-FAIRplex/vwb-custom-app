@@ -3,6 +3,7 @@ import express from "express";
 import { config } from "./config";
 import { drsRouter } from "./routes/drs";
 import { healthRouter } from "./routes/health";
+import { identityRouter } from "./routes/identity";
 import { searchRouter } from "./routes/search";
 import { sessionRouter } from "./routes/session";
 
@@ -10,6 +11,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/api/health", healthRouter);
+app.use("/api/identity", identityRouter);
 app.use("/api/session", sessionRouter);
 app.use("/api/drs", drsRouter);
 app.use("/api", searchRouter);

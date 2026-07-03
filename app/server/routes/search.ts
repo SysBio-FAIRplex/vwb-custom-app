@@ -23,24 +23,17 @@ function handleError(res: import("express").Response, error: unknown) {
 }
 
 // POST /api/search { tab, filters, publicPreview? }
-// Session-gated. With a session the Synapse token is forwarded as a Bearer
-// header so query-node answers "authorized" (unredacted). publicPreview
-// omits the header to demo query-node's public redaction (sex/race nulled).
+// Open to unauthenticated callers: query-node answers "public" and redacts
+// sensitive columns (sex/race nulled). With a session the Synapse token is
+// forwarded as a Bearer header so query-node answers "authorized" (unredacted);
+// publicPreview forces the public path even when a session exists (demo toggle).
 searchRouter.post("/search", async (req, res) => {
   const session = getSession();
-  if (!session) {
-    res.status(401).json({
-      success: false,
-      error: "No active session. Create a session with your Synapse token first.",
-    });
-    return;
-  }
-
   const { tab, filters, publicPreview } = req.body ?? {};
 
   try {
     const { query, parameters } = buildSearch(tab, filters);
-    const token = publicPreview === true ? undefined : session.synapseToken;
+    const token = publicPreview === true ? undefined : session?.synapseToken;
     const envelope = await queryNodeSearch(query, parameters, token);
     res.json({ success: true, data: envelope });
   } catch (error) {
