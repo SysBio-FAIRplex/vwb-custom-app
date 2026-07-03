@@ -131,21 +131,15 @@ export function App() {
             <NavLink to="/drs" className={navLinkClass}>
               DRS Lookup
             </NavLink>
-            <span
-              className="flex items-center space-x-1.5 pl-2 text-xs text-slate-400"
-              title={
-                session.hasToken
-                  ? "Authorized (Synapse token active)"
-                  : "Public (no token)"
-              }
-            >
+            {session.hasToken && (
               <span
-                className={`w-2 h-2 rounded-full ${
-                  session.hasToken ? "bg-emerald-500" : "bg-slate-300"
-                }`}
-              />
-              <span>{session.hasToken ? "Authorized" : "Public"}</span>
-            </span>
+                className="flex items-center space-x-1.5 pl-2 text-xs text-slate-400"
+                title="Synapse token active"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>Authorized</span>
+              </span>
+            )}
           </nav>
         </Header>
 
